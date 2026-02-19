@@ -4,6 +4,9 @@ from .models import Product
 from .serializers import ProductSerializer
 from django.shortcuts import render
 
+def home(request):
+    return render(request,"index.html")
+
 class ProductList(APIView):
     def get(self, request):
         products = Product.objects.all()
@@ -11,5 +14,3 @@ class ProductList(APIView):
         return Response(serializer.data)
 
 
-def home(request):
-    return render(request,"index.html")
