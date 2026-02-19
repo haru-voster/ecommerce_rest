@@ -31,12 +31,12 @@ const container = document.getElementById("productContainer");
 // Immediately show "loading" so layout is visible
 container.innerHTML = `<p style="width:100%; text-align:center;">Loading products...</p>`;
 
-// Fetch products asynchronously
 fetch("http://127.0.0.1:8000/api/products/")
 .then(res => res.json())
 .then(data => {
-    if(data.length === 0) {
-        container.innerHTML = `<p style="width:100%; text-align:center;">No products available.</p>`;
+    const container = document.getElementById("productContainer");
+    if (!data || data.length === 0) {
+        container.innerHTML = "<p>No products found.</p>";
         return;
     }
 
@@ -44,20 +44,19 @@ fetch("http://127.0.0.1:8000/api/products/")
     data.forEach(p => {
         html += `
         <div class="product-card">
-            <img src="${p.image || 'https://via.placeholder.com/200'}" alt="${p.name}">
+            <img src="http://127.0.0.1:8000${p.image || '/media/placeholder.png'}" alt="${p.name}">
             <h3>${p.name}</h3>
             <p>Ksh ${p.price}</p>
-            <p>RAM: ${p.ram || 'N/A'} | CPU: ${p.processor || 'N/A'} | Storage: ${p.storage || 'N/A'}</p>
-            <button onclick="alert('Viewing ${p.name}\\nCPU: ${p.processor}\\nRAM: ${p.ram}\\nStorage: ${p.storage}')">View</button>
+            <p>RAM: ${p.ram} | CPU: ${p.processor} | Storage: ${p.storage}</p>
+            <button onclick="alert('${p.name}\\nCPU: ${p.processor}\\nRAM: ${p.ram}\\nStorage: ${p.storage}')">View</button>
         </div>
         `;
     });
-
-    container.innerHTML = html; // replace "loading" with products
+    container.innerHTML = html;
 })
 .catch(err => {
-    container.innerHTML = `<p style="color:red; width:100%; text-align:center;">Failed to load products. Please try again.</p>`;
-    console.error(err);
+    console.error("Fetch error:", err);
+    document.getElementById("productContainer").innerHTML = "<p style='color:red;'>Failed to load products. Please try again.</p>";
 });
 </script>
 </body>

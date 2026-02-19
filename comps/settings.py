@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'ruestore',
+    'corsheaders',
  
 ]
 
@@ -53,6 +54,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'comps.urls'
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:5500",  # or your local frontend server
+]
 
 TEMPLATES = [
     {
