@@ -1,13 +1,20 @@
 from django.shortcuts import render
+from .models import *
 
-# Create your views here.
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Product
-from .serializers import ProductSerializer
+def store(request):
+    products = Product.objects.all()
+    categories = Category.objects.all()
 
-class ProductList(APIView):
-    def get(self, request):
-        products = Product.objects.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+    search = request.GET.get("search")
+    cat = request.GET.get("category")
+
+    if search:
+        products = products.filter(name__icontains=search)
+
+    if cat:
+        products = products.filter(category_id=cat)
+
+    return render(request,"store.html",{
+        "products":products,
+        "categories":categories
+    })

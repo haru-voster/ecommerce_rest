@@ -1,0 +1,235 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>RUESTORE - COMPUTERS/LAPTOPS</title>
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,700" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/slick.css' %}">
+<link rel="stylesheet" href="{% static 'css/slick-theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/nouislider.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header>
+
+<div id="top-header">
+<div class="container">
+<ul class="header-links pull-left">
+<li><a href="#"><i class="fa fa-phone"></i> +254 708466793</a></li>
+<li><a href="#"><i class="fa fa-envelope-o"></i> ruestores@email.com</a></li>
+<li><a href="#"><i class="fa fa-map-marker"></i> 112-00100 Nairobi</a></li>
+</ul>
+
+<ul class="header-links pull-right">
+<li><a href="#">Ksh</a></li>
+<li>
+{% if user.is_authenticated %}
+<a href="#">Hi {{user.username}}</a>
+{% else %}
+<a href="{% url 'login' %}"><i class="fa fa-user-o"></i> Login</a>
+{% endif %}
+</li>
+</ul>
+</div>
+</div>
+
+<div id="header">
+<div class="container">
+<div class="row">
+
+<div class="col-md-3">
+<div class="header-logo">
+<a href="/" class="logo"><h2>RUESTORE</h2></a>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="header-search">
+<form onsubmit="return false;">
+<select class="input-select" onchange="loadProducts(this.value)">
+<option value="all">All Categories</option>
+<option value="desktop">Desktops</option>
+<option value="laptop">Laptops</option>
+<option value="phone">Phones</option>
+<option value="camera">Cameras</option>
+<option value="accessory">Accessories</option>
+</select>
+
+<input class="input" id="searchInput" placeholder="Search products...">
+<button class="search-btn" onclick="loadProducts()">Search</button>
+</form>
+</div>
+</div>
+
+<div class="col-md-3 clearfix">
+<div class="header-ctn">
+
+<div>
+<a href="#">
+<i class="fa fa-heart-o"></i>
+<span>Your Wishlist</span>
+<div class="qty" id="wishCount">0</div>
+</a>
+</div>
+
+<div>
+<a href="#" class="cart-link">
+<i class="fa fa-shopping-cart"></i>
+<span>Your Cart</span>
+<div class="qty" id="cartCount">0</div>
+</a>
+
+<div id="cartContainer"
+style="position:absolute; top:40px; right:0; background:white; width:300px;
+padding:10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.2);
+display:none; z-index:1000;">
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</header>
+
+<!-- NAVIGATION -->
+<nav id="navigation">
+<button class="menu-toggle-btn" onclick="toggleMenu()">☰</button>
+
+<div class="container">
+<ul class="main-nav nav navbar-nav" id="mainMenu">
+<li class="active"><a href="#" onclick="loadProducts('all')">Home</a></li>
+<li><a href="#" onclick="loadProducts('desktop')">Desktops</a></li>
+<li><a href="#" onclick="loadProducts('laptop')">Laptops</a></li>
+<li><a href="#" onclick="loadProducts('printer')">Printers</a></li>
+<li><a href="#" onclick="loadProducts('phone')">Smartphones</a></li>
+<li><a href="#" onclick="loadProducts('camera')">Cameras</a></li>
+<li><a href="#" onclick="loadProducts('accessory')">Accessories</a></li>
+</ul>
+</div>
+</nav>
+
+<script>
+function toggleMenu(){
+const menu=document.getElementById("mainMenu");
+const btn=document.querySelector(".menu-toggle-btn");
+
+menu.classList.toggle("show");
+btn.textContent = menu.classList.contains("show") ? "✖" : "☰";
+}
+
+document.querySelectorAll("#mainMenu a").forEach(link=>{
+link.addEventListener("click",()=>{
+document.getElementById("mainMenu").classList.remove("show");
+document.querySelector(".menu-toggle-btn").textContent="☰";
+});
+});
+</script>
+
+<!-- PRODUCTS -->
+<div class="section">
+<div class="container">
+<div class="row">
+
+<div class="col-md-12">
+<div class="section-title">
+<h3 class="title">Products</h3>
+</div>
+</div>
+
+<div class="col-md-12">
+<div class="row" id="productContainer"></div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div id="productModal"
+style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000;">
+<div style="background:#fff; max-width:700px; width:90%; padding:20px;
+position:relative; overflow-y:auto; max-height:90%;">
+<span id="closeModal"
+style="position:absolute; top:10px; right:15px; cursor:pointer; font-size:24px;">
+&times;
+</span>
+<div id="modalContent"></div>
+</div>
+</div>
+
+<!-- FOOTER -->
+<footer id="footer">
+<div class="section">
+<div class="container">
+<div class="row">
+
+<div class="col-md-3 col-xs-6">
+<h3 class="footer-title">About Us</h3>
+<p>We are located along Moi Avenue opposite Bihi Towers.</p>
+</div>
+
+<div class="col-md-3 col-xs-6">
+<h3 class="footer-title">Categories</h3>
+<ul class="footer-links">
+<li><a href="#" onclick="loadProducts('desktop')">Desktops</a></li>
+<li><a href="#" onclick="loadProducts('laptop')">Laptops</a></li>
+<li><a href="#" onclick="loadProducts('printer')">Printers</a></li>
+<li><a href="#" onclick="loadProducts('phone')">Smartphones</a></li>
+</ul>
+</div>
+
+<div class="col-md-3 col-xs-6">
+<h3 class="footer-title">Information</h3>
+<ul class="footer-links">
+<li><a href="#">About Us</a></li>
+<li><a href="#">Contact Us</a></li>
+<li><a href="#">Privacy Policy</a></li>
+</ul>
+</div>
+
+<div class="col-md-3 col-xs-6">
+<h3 class="footer-title">Service</h3>
+<ul class="footer-links">
+<li><a href="#">My Account</a></li>
+<li><a href="#">Track Order</a></li>
+</ul>
+</div>
+
+</div>
+</div>
+</div>
+
+<div id="bottom-footer" class="section text-center">
+<span>
+© <script>document.write(new Date().getFullYear())</script>
+RUESTORE | Built by Haroun
+</span>
+</div>
+</footer>
+
+<!-- SCRIPTS -->
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'js/slick.min.js' %}"></script>
+<script src="{% static 'js/nouislider.min.js' %}"></script>
+<script src="{% static 'js/jquery.zoom.min.js' %}"></script>
+<script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/product.js' %}"></script>
+
+</body>
+</html>

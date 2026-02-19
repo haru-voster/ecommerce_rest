@@ -1,0 +1,22 @@
+<form>
+<input name="search" placeholder="Search product">
+<select name="category">
+<option value="">All</option>
+{% for c in categories %}
+<option value="{{c.id}}">{{c.name}}</option>
+{% endfor %}
+</select>
+<button>Search</button>
+</form>
+
+<div class="grid">
+{% for p in products %}
+<div class="card">
+<img src="{{p.image.url}}">
+<h3>{{p.name}}</h3>
+<p>Ksh {{p.price}}</p>
+<button onclick="addToCart({{p.id}})">Add to Cart</button>
+<button onclick="openModal('{{p.name}}','{{p.description}}','{{p.image.url}}')">View</button>
+</div>
+{% endfor %}
+</div>
