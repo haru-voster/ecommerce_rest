@@ -3,61 +3,187 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Products</title>
+<title>RUESTORE</title>
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:400,600,700" rel="stylesheet">
+<
+
 <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:10px; background:#f5f5f5; }
-    h2 { text-align:center; margin-top:20px; }
-    #productContainer { display:flex; flex-wrap:wrap; gap:15px; justify-content:center; padding:20px; }
-    .product-card { background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.15); padding:15px; width:200px; text-align:center; transition: transform 0.2s; }
-    .product-card:hover { transform:scale(1.03); }
-    .product-card img { width:100%; height:150px; object-fit:cover; border-radius:4px; }
-    .product-card button { margin-top:10px; padding:8px 12px; border:none; border-radius:4px; background-color:#2c3e50; color:white; cursor:pointer; }
-    .product-card button:hover { background-color:#34495e; }
+body{
+    font-family: 'Montserrat', sans-serif;
+    margin:0;
+    background:#f6f7fb;
+}
+
+/* HEADER */
+header{
+    background:#111;
+    color:white;
+    padding:15px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.logo{
+    font-size:26px;
+    font-weight:700;
+}
+.nav a{
+    color:white;
+    margin-left:20px;
+    text-decoration:none;
+    font-weight:600;
+}
+.nav a:hover{ color:#ff4d4d; }
+
+/* TITLE */
+.hero{
+    text-align:center;
+    padding:40px 20px 10px;
+}
+.hero h2{
+    font-size:32px;
+    margin-bottom:10px;
+}
+.hero p{
+    color:#666;
+}
+
+/* GRID */
+#productContainer{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:25px;
+    padding:40px;
+}
+
+/* CARD */
+.product-card{
+    background:white;
+    border-radius:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.08);
+    padding:20px;
+    text-align:center;
+    transition:.3s;
+}
+.product-card:hover{
+    transform:translateY(-8px);
+    box-shadow:0 12px 30px rgba(0,0,0,0.15);
+}
+
+/* IMAGE */
+.product-card img{
+    width:100%;
+    height:180px;
+    object-fit:contain;
+    margin-bottom:15px;
+}
+
+/* TEXT */
+.product-card h3{
+    margin:5px 0;
+    font-size:20px;
+}
+.price{
+    color:#e63946;
+    font-size:20px;
+    font-weight:700;
+    margin:10px 0;
+}
+.specs{
+    font-size:14px;
+    color:#666;
+}
+
+/* BUTTON */
+.product-card button{
+    margin-top:15px;
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:#2c3e50;
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+}
+.product-card button:hover{
+    background:black;
+}
+
+/* FOOTER */
+footer{
+    text-align:center;
+    background:#111;
+    color:#aaa;
+    padding:25px;
+    margin-top:40px;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+    header{flex-direction:column;gap:10px;}
+}
 </style>
 </head>
 <body>
 
-<h2>Welcome to RUESTORE</h2>
-<p style="text-align:center;">Browse our wide selection of computers, laptops, phones, cameras, and accessories below.</p>
-
-<!-- Product Section (empty at first, populated after fetch) -->
-<div id="productContainer">
-    <!-- Products will appear here -->
+<header>
+<div class="logo">RUESTORE</div>
+<div class="nav">
+<a href="#">Home</a>
+<a href="#">Products</a>
+<a href="#">Contact</a>
+<a href="#">Account</a>
 </div>
+</header>
+
+<section class="hero">
+<h2>Welcome to RUESTORE</h2>
+<p>Browse our wide selection of computers, laptops, phones, cameras, and accessories below.</p>
+</section>
+
+<div id="productContainer">
+Loading products...
+</div>
+
+<footer>
+© <script>document.write(new Date().getFullYear())</script> RUESTORE — Built by Haroun
+</footer>
 
 <script>
 const container = document.getElementById("productContainer");
 
-// Immediately show "loading" so layout is visible
-container.innerHTML = `<p style="width:100%; text-align:center;">Loading products...</p>`;
-
 fetch("http://127.0.0.1:8000/products/")
 .then(res => res.json())
 .then(data => {
-    const container = document.getElementById("productContainer");
-    if (!data || data.length === 0) {
-        container.innerHTML = "<p>No products found.</p>";
+
+    if (!data || data.length === 0){
+        container.innerHTML = "<p>No products available.</p>";
         return;
     }
 
-    let html = '';
-    data.forEach(p => {
-        html += `
+    container.innerHTML = data.map(p => `
         <div class="product-card">
-            <img src="http://127.0.0.1:8000${p.image || '/media/placeholder.png'}" alt="${p.name}">
+            <img src="http://127.0.0.1:8000${p.image}">
             <h3>${p.name}</h3>
-            <p>Ksh ${p.price}</p>
-            <p>RAM: ${p.ram} | CPU: ${p.processor} | Storage: ${p.storage}</p>
-            <button onclick="alert('${p.name}\\nCPU: ${p.processor}\\nRAM: ${p.ram}\\nStorage: ${p.storage}')">View</button>
+            <div class="price">Ksh ${p.price}</div>
+            <div class="specs">
+                RAM: ${p.ram}<br>
+                CPU: ${p.processor}<br>
+                Storage: ${p.storage}
+            </div>
+            <button onclick="alert('${p.name}\\nCPU:${p.processor}\\nRAM:${p.ram}\\nStorage:${p.storage}')">
+                View Details
+            </button>
         </div>
-        `;
-    });
-    container.innerHTML = html;
+    `).join("");
+
 })
-.catch(err => {
-    console.error("Fetch error:", err);
-    document.getElementById("productContainer").innerHTML = "<p style='color:red;'>Failed to load products. Please try again.</p>";
+.catch(err=>{
+    console.error(err);
+    container.innerHTML="<p style='color:red;text-align:center;'>Failed to load products</p>";
 });
 </script>
+
 </body>
 </html>
