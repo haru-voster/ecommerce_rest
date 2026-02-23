@@ -255,43 +255,82 @@ header{flex-direction:column;}
 
 
 <script>
-const container=document.getElementById("productContainer");
+const container = document.getElementById("productContainer");
 
-fetch("{% url 'product-list' %}")  // Django reverse URL
-.then(res=>res.json())
-.then(data=>{
-container.innerHTML=data.map(p=>`
-<div class="product-card">
-<img src="http://127.0.0.1:8000${p.image}">
-<h3>${p.name}</h3>
-<div class="price">Ksh ${p.price}</div>
-<div class="specs">
-RAM:${p.ram}<br>
-CPU:${p.processor}<br>
-Storage:${p.storage}
-</div>
-<button onclick='showDetails(${JSON.stringify(p)})'>View Details</button>
-</div>`).join("");
+/* helper to build correct image url */
+function getImageUrl(path){
+    if(!path) return "/static/img/no-image.png";
+
+    // already full URL
+    if(path.startsWith("http")) return path;
+
+    // ensure leading slash
+    if(!path.startsWith("/")) path = "/" + path;
+
+    return path;
+}
+
+fetch("{% url 'product-list' %}")
+.then(res => res.json())
+.then(data => {
+
+    if(!data.length){
+        container.innerHTML = "<p>No products found</p>";
+        return;
+    }
+
+    container.innerHTML = data.map(p => `
+    <div class="product-card">
+        <img src="${getImageUrl(p.image)}">
+        <h3>${p.name}</h3>
+        <div class="price">Ksh ${p.price}</div>
+
+        <div class="specs">
+            RAM: ${p.ram}<br>
+            CPU: ${p.processor}<br>
+            Storage: ${p.storage}
+        </div>
+
+        <button onclick='showDetails(${JSON.stringify(p)})'>
+            View Details
+        </button>
+    </div>
+    `).join("");
+
+})
+.catch(err=>{
+    console.error(err);
+    container.innerHTML = "<p style='color:red'>Failed to load products</p>";
 });
+
 
 /* MODAL */
 function showDetails(p){
 
-document.getElementById("modalTitle").innerText=p.name;
-document.getElementById("modalPrice").innerText="Ksh "+p.price;
+document.getElementById("modalTitle").innerText = p.name;
+document.getElementById("modalPrice").innerText = "Ksh " + p.price;
 
-let main=document.getElementById("modalImage");
-main.src="http://127.0.0.1:8000"+p.image;
+let main = document.getElementById("modalImage");
+main.src = getImageUrl(p.image);
 
 /* thumbnails */
-let thumbs=document.getElementById("thumbnailContainer");
-let images=p.images ? p.images : [p.image,p.image,p.image];
+let thumbs = document.getElementById("thumbnailContainer");
 
-thumbs.innerHTML=images.map(img=>
-`<img src="http://127.0.0.1:8000${img}" onclick="changeImage(this,'${img}')">`
+let images = (p.images && p.images.length)
+    ? p.images.map(i => i.image)
+    : [p.image];
+
+thumbs.innerHTML = images.map((img,index)=>
+`<img src="${getImageUrl(img)}"
+      class="${index===0 ? 'active' : ''}"
+      onclick="changeImage(this,'${getImageUrl(img)}')">`
 ).join("");
 
-document.getElementById("modalSpecs").innerHTML=`
+/* set first image as default main image */
+if(images.length){
+    main.src = getImageUrl(images[0]);
+}
+document.getElementById("modalSpecs").innerHTML = `
 <li><b>Processor:</b> ${p.processor}</li>
 <li><b>RAM:</b> ${p.ram}</li>
 <li><b>Storage:</b> ${p.storage}</li>
@@ -302,23 +341,28 @@ document.getElementById("modalSpecs").innerHTML=`
 <li>${p.description}</li>
 `;
 
-document.getElementById("productModal").style.display="flex";
+document.getElementById("productModal").style.display = "flex";
 }
 
+
+/* change image */
 function changeImage(el,src){
-document.getElementById("modalImage").src="http://127.0.0.1:8000"+src;
+document.getElementById("modalImage").src = src;
 document.querySelectorAll(".thumbs img").forEach(i=>i.classList.remove("active"));
 el.classList.add("active");
 }
 
+
+/* close modal */
 function closeModal(){
 document.getElementById("productModal").style.display="none";
 scale=1;rotation=0;updateTransform();
 }
 
 window.onclick=e=>{
-if(e.target.id==="productModal")closeModal();
+if(e.target.id==="productModal") closeModal();
 };
+
 
 /* VIEWER CONTROLS */
 let scale=1,rotation=0,isDragging=false,startX;
