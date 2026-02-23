@@ -279,23 +279,26 @@ fetch("{% url 'product-list' %}")
         return;
     }
 
-    container.innerHTML = data.map(p => `
-    <div class="product-card">
-        <img src="${getImageUrl(p.image)}">
-        <h3>${p.name}</h3>
-        <div class="price">Ksh ${p.price}</div>
+    container.innerHTML = data.map(p => {
+        // get first image for card display
+        let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
 
-        <div class="specs">
-            RAM: ${p.ram}<br>
-            CPU: ${p.processor}<br>
-            Storage: ${p.storage}
+        return `
+        <div class="product-card">
+            <img src="${getImageUrl(firstImage)}">
+            <h3>${p.name}</h3>
+            <div class="price">Ksh ${p.price}</div>
+            <div class="specs">
+                RAM: ${p.ram}<br>
+                CPU: ${p.processor}<br>
+                Storage: ${p.storage}
+            </div>
+            <button onclick='showDetails(${JSON.stringify(p)})'>
+                View Details
+            </button>
         </div>
-
-        <button onclick='showDetails(${JSON.stringify(p)})'>
-            View Details
-        </button>
-    </div>
-    `).join("");
+        `;
+    }).join("");
 
 })
 .catch(err=>{
@@ -306,86 +309,91 @@ fetch("{% url 'product-list' %}")
 
 /* MODAL */
 function showDetails(p){
+    document.getElementById("modalTitle").innerText = p.name;
+    document.getElementById("modalPrice").innerText = "Ksh " + p.price;
 
-document.getElementById("modalTitle").innerText = p.name;
-document.getElementById("modalPrice").innerText = "Ksh " + p.price;
+    let main = document.getElementById("modalImage");
 
-let main = document.getElementById("modalImage");
-main.src = getImageUrl(p.image);
+    /* thumbnails */
+    let thumbs = document.getElementById("thumbnailContainer");
 
-/* thumbnails */
-let thumbs = document.getElementById("thumbnailContainer");
+    // map images properly
+    let images = (p.images && p.images.length) ? p.images.map(i=>i.image) : [];
 
-let images = (p.images && p.images.length)
-    ? p.images.map(i => i.image)
-    : [p.image];
+    thumbs.innerHTML = images.map((img,index)=>
+        `<img src="${getImageUrl(img)}"
+              class="${index===0 ? 'active' : ''}"
+              onclick="changeImage(this,'${getImageUrl(img)}')">`
+    ).join("");
 
-thumbs.innerHTML = images.map((img,index)=>
-`<img src="${getImageUrl(img)}"
-      class="${index===0 ? 'active' : ''}"
-      onclick="changeImage(this,'${getImageUrl(img)}')">`
-).join("");
+    // set first image as main
+    if(images.length){
+        main.src = getImageUrl(images[0]);
+    } else {
+        main.src = "/static/img/no-image.png";
+    }
 
-/* set first image as default main image */
-if(images.length){
-    main.src = getImageUrl(images[0]);
-}
-document.getElementById("modalSpecs").innerHTML = `
-<li><b>Processor:</b> ${p.processor}</li>
-<li><b>RAM:</b> ${p.ram}</li>
-<li><b>Storage:</b> ${p.storage}</li>
-<li><b>Graphics:</b> ${p.graphics}</li>
-<li><b>Display:</b> ${p.display}</li>
-<li><b>Camera:</b> ${p.camera}</li>
-<li><b>Warranty:</b> ${p.warranty}</li>
-<li>${p.description}</li>
-`;
+    document.getElementById("modalSpecs").innerHTML = `
+    <li><b>Processor:</b> ${p.processor}</li>
+    <li><b>RAM:</b> ${p.ram}</li>
+    <li><b>Storage:</b> ${p.storage}</li>
+    <li><b>Graphics:</b> ${p.graphics}</li>
+    <li><b>Display:</b> ${p.display}</li>
+    <li><b>Camera:</b> ${p.camera}</li>
+    <li><b>Warranty:</b> ${p.warranty}</li>
+    <li>${p.description}</li>
+    `;
 
-document.getElementById("productModal").style.display = "flex";
+    document.getElementById("productModal").style.display = "flex";
 }
 
 
 /* change image */
 function changeImage(el,src){
-document.getElementById("modalImage").src = src;
-document.querySelectorAll(".thumbs img").forEach(i=>i.classList.remove("active"));
-el.classList.add("active");
+    document.getElementById("modalImage").src = src;
+    document.querySelectorAll(".thumbs img").forEach(i=>i.classList.remove("active"));
+    el.classList.add("active");
 }
 
 
 /* close modal */
 function closeModal(){
-document.getElementById("productModal").style.display="none";
-scale=1;rotation=0;updateTransform();
+    document.getElementById("productModal").style.display="none";
+    scale=1;rotation=0;updateTransform();
 }
 
-window.onclick=e=>{
-if(e.target.id==="productModal") closeModal();
+window.onclick = e => {
+    if(e.target.id === "productModal") closeModal();
 };
 
 
 /* VIEWER CONTROLS */
-let scale=1,rotation=0,isDragging=false,startX;
-const img=document.getElementById("modalImage");
+let scale = 1, rotation = 0, isDragging = false, startX;
+const img = document.getElementById("modalImage");
 
-function rotateLeft(){rotation-=90;updateTransform();}
-function rotateRight(){rotation+=90;updateTransform();}
-function zoomIn(){scale+=.2;updateTransform();}
-function zoomOut(){scale=Math.max(.4,scale-.2);updateTransform();}
-function updateTransform(){img.style.transform=`scale(${scale}) rotate(${rotation}deg)`;}
+function rotateLeft(){ rotation -= 90; updateTransform(); }
+function rotateRight(){ rotation += 90; updateTransform(); }
+function zoomIn(){ scale += 0.2; updateTransform(); }
+function zoomOut(){ scale = Math.max(0.4, scale - 0.2); updateTransform(); }
+function updateTransform(){ img.style.transform = `scale(${scale}) rotate(${rotation}deg)`; }
 
-img.addEventListener("mousedown",e=>{
-isDragging=true;
-startX=e.clientX;
-img.style.cursor="grabbing";
+img.addEventListener("mousedown", e=>{
+    isDragging = true;
+    startX = e.clientX;
+    img.style.cursor="grabbing";
 });
-window.addEventListener("mouseup",()=>{isDragging=false;img.style.cursor="grab";});
-window.addEventListener("mousemove",e=>{
-if(!isDragging)return;
-let diff=e.clientX-startX;
-rotation+=diff*.5;
-startX=e.clientX;
-updateTransform();
+
+window.addEventListener("mouseup", ()=>{
+    isDragging = false;
+    img.style.cursor="grab";
+});
+
+window.addEventListener("mousemove", e=>{
+    if(!isDragging) return;
+    let diff = e.clientX - startX;
+    rotation += diff * 0.5;
+    startX = e.clientX;
+    updateTransform();
 });
 </script>
 

@@ -1,15 +1,26 @@
-
 from rest_framework import serializers
 from .models import Product, ProductImage
 
+
 class ProductImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductImage
-        fields = ['image']
+        fields = ["id", "image"]
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.image:
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+
 
 class ProductSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)  # fetch all images
+    images = ProductImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id','name','price','ram','processor','storage','graphics','display','camera','warranty','description','images']
+        fields = "__all__"
