@@ -8,6 +8,7 @@
 
 <link href="https://fonts.googleapis.com/css?family=Montserrat:400,600,700" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
 <style>
 body{
     font-family: 'Montserrat', sans-serif;
@@ -36,7 +37,7 @@ header{
 }
 .nav a:hover{ color:#ff4d4d; }
 
-/* TITLE */
+/* HERO */
 .hero{
     text-align:center;
     padding:40px 20px 10px;
@@ -119,9 +120,92 @@ footer{
     margin-top:40px;
 }
 
-/* MOBILE */
-@media(max-width:600px){
-    header{flex-direction:column;gap:10px;}
+/* MODAL */
+.modal{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.75);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.modal-box{
+    background:white;
+    width:900px;
+    max-width:95%;
+    border-radius:16px;
+    padding:25px;
+    animation:fadeIn .3s ease;
+}
+
+@keyframes fadeIn{
+    from{transform:scale(.8);opacity:0;}
+    to{transform:scale(1);opacity:1;}
+}
+
+.close{
+    float:right;
+    font-size:26px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.modal-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:30px;
+    align-items:center;
+}
+
+.modal-img img{
+    width:100%;
+    height:320px;
+    object-fit:contain;
+}
+
+.modal-price{
+    font-size:24px;
+    color:#e63946;
+    font-weight:700;
+    margin-bottom:15px;
+}
+
+#modalSpecs{
+    max-height:200px;
+    overflow:auto;
+    padding-left:18px;
+    margin-bottom:20px;
+}
+
+#modalSpecs li{
+    margin-bottom:6px;
+    font-size:15px;
+}
+
+.cart-btn{
+    padding:12px 20px;
+    border:none;
+    background:#111;
+    color:white;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
+    width:100%;
+}
+.cart-btn:hover{
+    background:#e63946;
+}
+
+@media(max-width:700px){
+.modal-grid{
+    grid-template-columns:1fr;
+}
+header{flex-direction:column;gap:10px;}
 }
 </style>
 </head>
@@ -150,6 +234,34 @@ Loading products...
 © <script>document.write(new Date().getFullYear())</script> RUESTORE — Built by Haroun
 </footer>
 
+
+<!-- MODAL -->
+<div id="productModal" class="modal">
+  <div class="modal-box">
+
+      <span class="close" onclick="closeModal()">×</span>
+
+      <div class="modal-grid">
+
+          <div class="modal-img">
+              <img id="modalImage">
+          </div>
+
+          <div class="modal-details">
+              <h2 id="modalTitle"></h2>
+              <div class="modal-price" id="modalPrice"></div>
+
+              <h4>Specifications</h4>
+              <ul id="modalSpecs"></ul>
+
+              <button class="cart-btn">Add To Cart</button>
+          </div>
+
+      </div>
+  </div>
+</div>
+
+
 <script>
 const container = document.getElementById("productContainer");
 
@@ -167,12 +279,14 @@ fetch("http://127.0.0.1:8000/products/")
             <img src="http://127.0.0.1:8000${p.image}">
             <h3>${p.name}</h3>
             <div class="price">Ksh ${p.price}</div>
+
             <div class="specs">
                 RAM: ${p.ram}<br>
                 CPU: ${p.processor}<br>
                 Storage: ${p.storage}
             </div>
-            <button onclick="alert('${p.name}\\nCPU:${p.processor}\\nRAM:${p.ram}\\nStorage:${p.storage}')">
+
+            <button onclick='showDetails(${JSON.stringify(p)})'>
                 View Details
             </button>
         </div>
@@ -183,6 +297,37 @@ fetch("http://127.0.0.1:8000/products/")
     console.error(err);
     container.innerHTML="<p style='color:red;text-align:center;'>Failed to load products</p>";
 });
+
+
+function showDetails(p){
+
+document.getElementById("modalTitle").innerText = p.name;
+document.getElementById("modalPrice").innerText = "Ksh " + p.price;
+document.getElementById("modalImage").src = "http://127.0.0.1:8000" + p.image;
+
+document.getElementById("modalSpecs").innerHTML = `
+<li><b>Processor:</b> ${p.processor}</li>
+<li><b>RAM:</b> ${p.ram}</li>
+<li><b>Storage:</b> ${p.storage}</li>
+<li><b>Graphics:</b> ${p.graphics}</li>
+<li><b>Display:</b> ${p.display}</li>
+<li><b>Camera:</b> ${p.camera}</li>
+<li><b>Warranty:</b> ${p.warranty}</li>
+<li>${p.description}</li>
+`;
+
+document.getElementById("productModal").style.display="flex";
+}
+
+function closeModal(){
+document.getElementById("productModal").style.display="none";
+}
+
+window.onclick = function(e){
+if(e.target.id==="productModal"){
+closeModal();
+}
+}
 </script>
 
 </body>
