@@ -211,6 +211,7 @@ header{flex-direction:column;}
 </section>
 
 <div id="productContainer">Loading products...</div>
+<div id="pagination" class="pagination"></div>
 
 <footer>
 © <script>document.write(new Date().getFullYear())</script> RUESTORE
@@ -253,72 +254,119 @@ header{flex-direction:column;}
 </div>
 </div>
 
-
 <script>
 const container = document.getElementById("productContainer");
+const paginationContainer = document.getElementById("pagination");
+
+let currentPage = 1;
+const pageSize = 4;
 
 /* helper to build correct image url */
 function getImageUrl(path){
     if(!path) return "/static/img/no-image.png";
 
-    // already full URL
     if(path.startsWith("http")) return path;
 
-    // ensure leading slash
     if(!path.startsWith("/")) path = "/" + path;
 
     return path;
 }
 
-fetch("{% url 'product-list' %}")
-.then(res => res.json())
-.then(data => {
 
-    if(!data.length){
-        container.innerHTML = "<p>No products found</p>";
-        return;
+/* ===========================
+   LOAD PRODUCTS WITH PAGINATION
+=========================== */
+function loadProducts(page = 1){
+
+    fetch(`{% url 'product-list' %}?page=${page}`)
+    .then(res => res.json())
+    .then(data => {
+
+        const products = data.results;   // IMPORTANT (because of DRF pagination)
+
+        if(!products.length){
+            container.innerHTML = "<p>No products found</p>";
+            return;
+        }
+
+        container.innerHTML = products.map(p => {
+
+            let firstImage = (p.images && p.images.length)
+                ? p.images[0].image
+                : null;
+
+            return `
+            <div class="product-card">
+                <img src="${getImageUrl(firstImage)}">
+                <h3>${p.name}</h3>
+                <div class="price">Ksh ${p.price}</div>
+                <div class="specs">
+                    RAM: ${p.ram}<br>
+                    CPU: ${p.processor}<br>
+                    Storage: ${p.storage}
+                </div>
+                <button onclick='showDetails(${JSON.stringify(p)})'>
+                    View Details
+                </button>
+            </div>
+            `;
+        }).join("");
+
+        buildPagination(data.count);
+    })
+    .catch(err=>{
+        console.error(err);
+        container.innerHTML = "<p style='color:red'>Failed to load products</p>";
+    });
+}
+
+
+/* ===========================
+   BUILD PAGINATION BUTTONS
+=========================== */
+function buildPagination(totalItems){
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    let buttons = "";
+
+    for(let i = 1; i <= totalPages; i++){
+        buttons += `
+        <button onclick="goToPage(${i})"
+            class="${i === currentPage ? 'active-page' : ''}">
+            ${i}
+        </button>
+        `;
     }
 
-    container.innerHTML = data.map(p => {
-        // get first image for card display
-        let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
+    paginationContainer.innerHTML = buttons;
+}
 
-        return `
-        <div class="product-card">
-            <img src="${getImageUrl(firstImage)}">
-            <h3>${p.name}</h3>
-            <div class="price">Ksh ${p.price}</div>
-            <div class="specs">
-                RAM: ${p.ram}<br>
-                CPU: ${p.processor}<br>
-                Storage: ${p.storage}
-            </div>
-            <button onclick='showDetails(${JSON.stringify(p)})'>
-                View Details
-            </button>
-        </div>
-        `;
-    }).join("");
-
-})
-.catch(err=>{
-    console.error(err);
-    container.innerHTML = "<p style='color:red'>Failed to load products</p>";
-});
+function goToPage(page){
+    currentPage = page;
+    loadProducts(page);
+}
 
 
-/* MODAL */
+/* INITIAL LOAD */
+loadProducts();
+
+
+
+/* ===========================
+   YOUR MODAL CODE (UNCHANGED)
+=========================== */
+
 function showDetails(p){
     document.getElementById("modalTitle").innerText = p.name;
     document.getElementById("modalPrice").innerText = "Ksh " + p.price;
 
     let main = document.getElementById("modalImage");
-
-    /* thumbnails */
     let thumbs = document.getElementById("thumbnailContainer");
 
-    // map images properly
-    let images = (p.images && p.images.length) ? p.images.map(i=>i.image) : [];
+    let images = (p.images && p.images.length)
+        ? p.images.map(i=>i.image)
+        : [];
 
     thumbs.innerHTML = images.map((img,index)=>
         `<img src="${getImageUrl(img)}"
@@ -326,7 +374,6 @@ function showDetails(p){
               onclick="changeImage(this,'${getImageUrl(img)}')">`
     ).join("");
 
-    // set first image as main
     if(images.length){
         main.src = getImageUrl(images[0]);
     } else {
@@ -351,7 +398,8 @@ function showDetails(p){
 /* change image */
 function changeImage(el,src){
     document.getElementById("modalImage").src = src;
-    document.querySelectorAll(".thumbs img").forEach(i=>i.classList.remove("active"));
+    document.querySelectorAll("#thumbnailContainer img")
+        .forEach(i=>i.classList.remove("active"));
     el.classList.add("active");
 }
 
@@ -375,7 +423,9 @@ function rotateLeft(){ rotation -= 90; updateTransform(); }
 function rotateRight(){ rotation += 90; updateTransform(); }
 function zoomIn(){ scale += 0.2; updateTransform(); }
 function zoomOut(){ scale = Math.max(0.4, scale - 0.2); updateTransform(); }
-function updateTransform(){ img.style.transform = `scale(${scale}) rotate(${rotation}deg)`; }
+function updateTransform(){
+    img.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
+}
 
 img.addEventListener("mousedown", e=>{
     isDragging = true;
@@ -396,6 +446,5 @@ window.addEventListener("mousemove", e=>{
     updateTransform();
 });
 </script>
-
 </body>
 </html>
