@@ -191,24 +191,36 @@ footer{text-align:center;background:#111;color:#aaa;padding:25px;margin-top:40px
 .modal-grid{grid-template-columns:1fr;}
 header{flex-direction:column;}
 }
-.pagination {
-    margin-top: 30px;
-    text-align: center;
-}
 
-.pagination button {
-    padding: 8px 14px;
-    margin: 5px;
-    border: none;
-    background: #ddd;
+/* Pagination at bottom */
+#pagination {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+#pagination button {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    background: #fff;
     cursor: pointer;
-    border-radius: 5px;
+}
+#pagination button.active-page {
+    background: #007bff;
+    color: #fff;
+}
+#pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.product-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 8px;
 }
 
-.pagination button.active-page {
-    background: #ff3b3b;
-    color: white;
-}
 </style>
 </head>
 <body>
@@ -275,64 +287,34 @@ header{flex-direction:column;}
 <script>
 const container = document.getElementById("productContainer");
 const paginationContainer = document.getElementById("pagination");
-
 let currentPage = 1;
-const pageSize = 4;
-
-/* helper to build correct image url */
-function getImageUrl(path){
-    if(!path) return "/static/img/no-image.png";
-
-    if(path.startsWith("http")) return path;
-
-    if(!path.startsWith("/")) path = "/" + path;
-
-    return path;
-}
-
+const productsPerPage = 4; // 2 rows × 2 columns
+let allProducts = [];
 
 /* ===========================
-   LOAD PRODUCTS WITH PAGINATION
+   HELPER TO GET IMAGE URL
 =========================== */
-function loadProducts(page = 1){
-    fetch(`{% url 'product-list' %}?page=${page}`)
+function getImageUrl(imgPath){
+    if(!imgPath) return "/static/default.png"; // fallback image if none
+    return imgPath.startsWith("http") ? imgPath : `/media/${imgPath}`;
+}
+
+/* ===========================
+   LOAD ALL PRODUCTS ONCE
+=========================== */
+function loadProducts(){
+    fetch("/api/products/") 
     .then(res => res.json())
     .then(data => {
+        console.log("API DATA:", data);
+        allProducts = data;
 
-        console.log("API DATA:", data);  // DEBUG
-
-        // If pagination enabled
-        const products = data.results ? data.results : data;
-
-        if(!products || !products.length){
+        if(!allProducts.length){
             container.innerHTML = "<p>No products found</p>";
             return;
         }
 
-        container.innerHTML = products.map(p => {
-            let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
-
-            return `
-            <div class="product-card">
-                <img src="${getImageUrl(firstImage)}">
-                <h3>${p.name}</h3>
-                <div class="price">Ksh ${p.price}</div>
-                <div class="specs">
-                    RAM: ${p.ram}<br>
-                    CPU: ${p.processor}<br>
-                    Storage: ${p.storage}
-                </div>
-                <button onclick='showDetails(${JSON.stringify(p)})'>
-                    View Details
-                </button>
-            </div>
-            `;
-        }).join("");
-
-        // Only build pagination if count exists
-        if(data.count){
-            buildPagination(data.count);
-        }
+        renderPage(1);
     })
     .catch(err=>{
         console.error("FETCH ERROR:", err);
@@ -340,33 +322,78 @@ function loadProducts(page = 1){
     });
 }
 
+/* ===========================
+   RENDER PRODUCTS BY PAGE
+=========================== */
+function renderPage(page){
+    currentPage = page;
+
+    const start = (page - 1) * productsPerPage;
+    const end = start + productsPerPage;
+
+    const productsToShow = allProducts.slice(start, end);
+
+    container.innerHTML = productsToShow.map(p => {
+        let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
+        return `
+        <div class="product-card">
+            <img src="${getImageUrl(firstImage)}" alt="${p.name}" loading="lazy">
+            <h3>${p.name}</h3>
+            <div class="price">Ksh ${p.price}</div>
+            <div class="specs">
+                RAM: ${p.ram}<br>
+                CPU: ${p.processor}<br>
+                Storage: ${p.storage}
+            </div>
+            <button onclick='showDetails(${JSON.stringify(p)})'>
+                View Details
+            </button>
+        </div>
+        `;
+    }).join("");
+
+    buildPagination();
+}
 
 /* ===========================
-   BUILD PAGINATION BUTTONS
+   BUILD PAGE NUMBERS
 =========================== */
-function buildPagination(totalItems){
-
-    const totalPages = Math.ceil(totalItems / pageSize);
+function buildPagination(){
+    const totalPages = Math.ceil(allProducts.length / productsPerPage);
 
     let buttons = "";
 
+    // PREV
+    buttons += `
+        <button 
+            ${currentPage === 1 ? "disabled" : ""} 
+            onclick="renderPage(${currentPage - 1})">
+            « Prev
+        </button>
+    `;
+
+    // PAGE NUMBERS
     for(let i = 1; i <= totalPages; i++){
         buttons += `
-        <button onclick="goToPage(${i})"
-            class="${i === currentPage ? 'active-page' : ''}">
-            ${i}
-        </button>
+            <button 
+                onclick="renderPage(${i})"
+                class="${i === currentPage ? 'active-page' : ''}">
+                ${i}
+            </button>
         `;
     }
 
+    // NEXT
+    buttons += `
+        <button 
+            ${currentPage === totalPages ? "disabled" : ""} 
+            onclick="renderPage(${currentPage + 1})">
+            Next »
+        </button>
+    `;
+
     paginationContainer.innerHTML = buttons;
 }
-
-function goToPage(page){
-    currentPage = page;
-    loadProducts(page);
-}
-
 
 /* INITIAL LOAD */
 loadProducts();
