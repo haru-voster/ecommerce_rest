@@ -285,121 +285,100 @@ header{flex-direction:column;}
 </div>
 </div>
 </div>
-
 <script>
 const container = document.getElementById("productContainer");
 const paginationContainer = document.getElementById("pagination");
 
 let currentPage = 1;
 const pageSize = 4;
+let allProducts = [];  // store all products here
 
-/* helper to build correct image url */
+// Helper to build image url
 function getImageUrl(path){
     if(!path) return "/static/img/no-image.png";
-
     if(path.startsWith("http")) return path;
     if(path.startsWith("/media/")) return path;
-
     return `/media/${path}`;
-
 }
 
-
-/* ===========================
-   LOAD PRODUCTS WITH PAGINATION
-=========================== */
-function loadProducts(page = 1){
-    fetch(`{% url 'product-list' %}?page=${page}`)
+// Load all products from API (flat array)
+function loadAllProducts(){
+    fetch("{% url 'product-list' %}")
     .then(res => res.json())
     .then(data => {
-
-        const products = data.results ? data.results : data;
-
-        if(!products || !products.length){
+        allProducts = data; // store all products
+        if(!allProducts || !allProducts.length){
             container.innerHTML = "<p>No products found</p>";
+            paginationContainer.innerHTML = "";
             return;
         }
-
-        container.innerHTML = products.map(p => {
-            let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
-
-            return `
-            <div class="product-card">
-                <img src="${getImageUrl(firstImage)}">
-                <h3>${p.name}</h3>
-                <div class="price">Ksh ${p.price}</div>
-                <div class="specs">
-                    RAM: ${p.ram}<br>
-                    CPU: ${p.processor}<br>
-                    Storage: ${p.storage}
-                </div>
-                <button onclick='showDetails(${JSON.stringify(p)})'>
-                    View Details
-                </button>
-            </div>
-            `;
-        }).join("");
-
-        // Build pagination only if total count exists
-        if(data.count){
-            buildPagination(data.count);
-        }
+        renderPage(1); // show first page
     })
     .catch(err=>{
         console.error("FETCH ERROR:", err);
         container.innerHTML = "<p style='color:red'>Failed to load products</p>";
+        paginationContainer.innerHTML = "";
     });
 }
-/* ===========================
-   BUILD PAGINATION BUTTONS
-=========================== */
-function buildPagination(totalItems){
 
-    const totalPages = Math.ceil(totalItems / pageSize);
+// Render a page
+function renderPage(page){
+    currentPage = page;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const products = allProducts.slice(start, end);
+
+    container.innerHTML = products.map(p => {
+        let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
+
+        return `
+        <div class="product-card">
+            <img src="${getImageUrl(firstImage)}">
+            <h3>${p.name}</h3>
+            <div class="price">Ksh ${p.price}</div>
+            <div class="specs">
+                RAM: ${p.ram}<br>
+                CPU: ${p.processor}<br>
+                Storage: ${p.storage}
+            </div>
+            <button onclick='showDetails(${JSON.stringify(p)})'>
+                View Details
+            </button>
+        </div>
+        `;
+    }).join("");
+
+    buildPagination();
+}
+
+// Build pagination buttons
+function buildPagination(){
+    const totalPages = Math.ceil(allProducts.length / pageSize);
     let buttons = "";
 
-    // PREVIOUS BUTTON
-    buttons += `
-        <button 
-            ${currentPage === 1 ? "disabled" : ""} 
-            onclick="goToPage(${currentPage - 1})">
-            « Prev
-        </button>
-    `;
+    // Previous
+    buttons += `<button ${currentPage === 1 ? "disabled" : ""} onclick="renderPage(${currentPage - 1})">« Prev</button>`;
 
-    // PAGE NUMBERS
-    for(let i = 1; i <= totalPages; i++){
-    buttons += `
-        <button 
-            onclick="goToPage(${i})"
-            class="${i === currentPage ? 'active-page' : ''}">
-            ${i}
-        </button>
-    `;
+    // Page numbers (show max 5 at a time)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    if(startPage > 1) buttons += `<span>...</span>`;
+
+    for(let i = startPage; i <= endPage; i++){
+        buttons += `<button onclick="renderPage(${i})" class="${i === currentPage ? 'active-page' : ''}">${i}</button>`;
     }
 
-    // NEXT BUTTON
-    buttons += `
-        <button 
-            ${currentPage === totalPages ? "disabled" : ""} 
-            onclick="goToPage(${currentPage + 1})">
-            Next »
-        </button>
-    `;
+    if(endPage < totalPages) buttons += `<span>...</span>`;
+
+    // Next
+    buttons += `<button ${currentPage === totalPages ? "disabled" : ""} onclick="renderPage(${currentPage + 1})">Next »</button>`;
 
     paginationContainer.innerHTML = buttons;
 }
-function goToPage(page){
-    currentPage = page; // update current page
-    loadProducts(page); // reload products for that page
-    window.scrollTo({top: 0, behavior: 'smooth'}); // optional: scroll to top
-}
 
-/* INITIAL LOAD */
-loadProducts();
-
-
-
+// INITIAL LOAD
+loadAllProducts();
 /* ===========================
    YOUR MODAL CODE (UNCHANGED)
 =========================== */
