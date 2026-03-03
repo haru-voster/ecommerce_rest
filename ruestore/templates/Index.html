@@ -283,7 +283,6 @@ header{flex-direction:column;}
 </div>
 </div>
 </div>
-
 <script>
 const container = document.getElementById("productContainer");
 const paginationContainer = document.getElementById("pagination");
@@ -295,7 +294,7 @@ let allProducts = [];
    HELPER TO GET IMAGE URL
 =========================== */
 function getImageUrl(imgPath){
-    if(!imgPath) return "/static/default.png"; // fallback image if none
+    if(!imgPath) return "/static/img/no-image.png"; // fallback image
     return imgPath.startsWith("http") ? imgPath : `/media/${imgPath}`;
 }
 
@@ -303,8 +302,11 @@ function getImageUrl(imgPath){
    LOAD ALL PRODUCTS ONCE
 =========================== */
 function loadProducts(){
-    fetch("/api/products/") 
-    .then(res => res.json())
+    fetch("/products/") 
+    .then(res => {
+        if(!res.ok) throw new Error("Network response was not OK");
+        return res.json();
+    })
     .then(data => {
         console.log("API DATA:", data);
         allProducts = data;
@@ -330,11 +332,14 @@ function renderPage(page){
 
     const start = (page - 1) * productsPerPage;
     const end = start + productsPerPage;
-
     const productsToShow = allProducts.slice(start, end);
 
     container.innerHTML = productsToShow.map(p => {
         let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
+
+        // JSON stringify safely for onclick
+        const safeJson = JSON.stringify(p).replace(/'/g,"&#39;");
+
         return `
         <div class="product-card">
             <img src="${getImageUrl(firstImage)}" alt="${p.name}" loading="lazy">
@@ -345,7 +350,7 @@ function renderPage(page){
                 CPU: ${p.processor}<br>
                 Storage: ${p.storage}
             </div>
-            <button onclick='showDetails(${JSON.stringify(p)})'>
+            <button onclick='showDetails(JSON.parse("${safeJson}"))'>
                 View Details
             </button>
         </div>
@@ -360,50 +365,25 @@ function renderPage(page){
 =========================== */
 function buildPagination(){
     const totalPages = Math.ceil(allProducts.length / productsPerPage);
-
     let buttons = "";
 
     // PREV
-    buttons += `
-        <button 
-            ${currentPage === 1 ? "disabled" : ""} 
-            onclick="renderPage(${currentPage - 1})">
-            « Prev
-        </button>
-    `;
+    buttons += `<button ${currentPage === 1 ? "disabled" : ""} onclick="renderPage(${currentPage - 1})">« Prev</button>`;
 
     // PAGE NUMBERS
     for(let i = 1; i <= totalPages; i++){
-        buttons += `
-            <button 
-                onclick="renderPage(${i})"
-                class="${i === currentPage ? 'active-page' : ''}">
-                ${i}
-            </button>
-        `;
+        buttons += `<button onclick="renderPage(${i})" class="${i===currentPage ? 'active-page':''}">${i}</button>`;
     }
 
     // NEXT
-    buttons += `
-        <button 
-            ${currentPage === totalPages ? "disabled" : ""} 
-            onclick="renderPage(${currentPage + 1})">
-            Next »
-        </button>
-    `;
+    buttons += `<button ${currentPage === totalPages ? "disabled" : ""} onclick="renderPage(${currentPage + 1})">Next »</button>`;
 
     paginationContainer.innerHTML = buttons;
 }
 
-/* INITIAL LOAD */
-loadProducts();
-
-
-
 /* ===========================
-   YOUR MODAL CODE (UNCHANGED)
+   SHOW MODAL
 =========================== */
-
 function showDetails(p){
     document.getElementById("modalTitle").innerText = p.name;
     document.getElementById("modalPrice").innerText = "Ksh " + p.price;
@@ -411,68 +391,58 @@ function showDetails(p){
     let main = document.getElementById("modalImage");
     let thumbs = document.getElementById("thumbnailContainer");
 
-    let images = (p.images && p.images.length)
-        ? p.images.map(i=>i.image)
-        : [];
+    let images = (p.images && p.images.length) ? p.images.map(i=>i.image) : [];
 
     thumbs.innerHTML = images.map((img,index)=>
-        `<img src="${getImageUrl(img)}"
-              class="${index===0 ? 'active' : ''}"
-              onclick="changeImage(this,'${getImageUrl(img)}')">`
+        `<img src="${getImageUrl(img)}" class="${index===0 ? 'active':''}" onclick="changeImage(this,'${getImageUrl(img)}')">`
     ).join("");
 
-    if(images.length){
-        main.src = getImageUrl(images[0]);
-    } else {
-        main.src = "/static/img/no-image.png";
-    }
+    main.src = images.length ? getImageUrl(images[0]) : "/static/img/no-image.png";
 
     document.getElementById("modalSpecs").innerHTML = `
-    <li><b>Processor:</b> ${p.processor}</li>
-    <li><b>RAM:</b> ${p.ram}</li>
-    <li><b>Storage:</b> ${p.storage}</li>
-    <li><b>Graphics:</b> ${p.graphics}</li>
-    <li><b>Display:</b> ${p.display}</li>
-    <li><b>Camera:</b> ${p.camera}</li>
-    <li><b>Warranty:</b> ${p.warranty}</li>
-    <li>${p.description}</li>
+        <li><b>Processor:</b> ${p.processor || '-'}</li>
+        <li><b>RAM:</b> ${p.ram || '-'}</li>
+        <li><b>Storage:</b> ${p.storage || '-'}</li>
+        <li><b>Graphics:</b> ${p.graphics || '-'}</li>
+        <li><b>Display:</b> ${p.display || '-'}</li>
+        <li><b>Camera:</b> ${p.camera || '-'}</li>
+        <li><b>Warranty:</b> ${p.warranty || '-'}</li>
+        <li>${p.description || ''}</li>
     `;
 
     document.getElementById("productModal").style.display = "flex";
 }
 
-
-/* change image */
+/* ===========================
+   MODAL IMAGE CHANGE
+=========================== */
 function changeImage(el,src){
     document.getElementById("modalImage").src = src;
-    document.querySelectorAll("#thumbnailContainer img")
-        .forEach(i=>i.classList.remove("active"));
+    document.querySelectorAll("#thumbnailContainer img").forEach(i=>i.classList.remove("active"));
     el.classList.add("active");
 }
 
-
-/* close modal */
+/* ===========================
+   CLOSE MODAL
+=========================== */
 function closeModal(){
     document.getElementById("productModal").style.display="none";
-    scale=1;rotation=0;updateTransform();
+    scale=1; rotation=0; updateTransform();
 }
 
-window.onclick = e => {
-    if(e.target.id === "productModal") closeModal();
-};
+window.onclick = e => { if(e.target.id==="productModal") closeModal(); };
 
-
-/* VIEWER CONTROLS */
+/* ===========================
+   IMAGE VIEWER CONTROLS
+=========================== */
 let scale = 1, rotation = 0, isDragging = false, startX;
 const img = document.getElementById("modalImage");
 
 function rotateLeft(){ rotation -= 90; updateTransform(); }
 function rotateRight(){ rotation += 90; updateTransform(); }
 function zoomIn(){ scale += 0.2; updateTransform(); }
-function zoomOut(){ scale = Math.max(0.4, scale - 0.2); updateTransform(); }
-function updateTransform(){
-    img.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
-}
+function zoomOut(){ scale = Math.max(0.4, scale-0.2); updateTransform(); }
+function updateTransform(){ img.style.transform = `scale(${scale}) rotate(${rotation}deg)`; }
 
 img.addEventListener("mousedown", e=>{
     isDragging = true;
@@ -480,18 +450,19 @@ img.addEventListener("mousedown", e=>{
     img.style.cursor="grabbing";
 });
 
-window.addEventListener("mouseup", ()=>{
-    isDragging = false;
-    img.style.cursor="grab";
-});
-
+window.addEventListener("mouseup", ()=>{ isDragging=false; img.style.cursor="grab"; });
 window.addEventListener("mousemove", e=>{
     if(!isDragging) return;
     let diff = e.clientX - startX;
-    rotation += diff * 0.5;
+    rotation += diff*0.5;
     startX = e.clientX;
     updateTransform();
 });
+
+/* ===========================
+   INITIAL LOAD
+=========================== */
+loadProducts();
 </script>
 </body>
 </html>
