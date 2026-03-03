@@ -191,6 +191,24 @@ footer{text-align:center;background:#111;color:#aaa;padding:25px;margin-top:40px
 .modal-grid{grid-template-columns:1fr;}
 header{flex-direction:column;}
 }
+.pagination {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.pagination button {
+    padding: 8px 14px;
+    margin: 5px;
+    border: none;
+    background: #ddd;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.pagination button.active-page {
+    background: #ff3b3b;
+    color: white;
+}
 </style>
 </head>
 <body>
@@ -277,23 +295,22 @@ function getImageUrl(path){
    LOAD PRODUCTS WITH PAGINATION
 =========================== */
 function loadProducts(page = 1){
-
     fetch(`{% url 'product-list' %}?page=${page}`)
     .then(res => res.json())
     .then(data => {
 
-        const products = data.results;   // IMPORTANT (because of DRF pagination)
+        console.log("API DATA:", data);  // DEBUG
 
-        if(!products.length){
+        // If pagination enabled
+        const products = data.results ? data.results : data;
+
+        if(!products || !products.length){
             container.innerHTML = "<p>No products found</p>";
             return;
         }
 
         container.innerHTML = products.map(p => {
-
-            let firstImage = (p.images && p.images.length)
-                ? p.images[0].image
-                : null;
+            let firstImage = (p.images && p.images.length) ? p.images[0].image : null;
 
             return `
             <div class="product-card">
@@ -312,10 +329,13 @@ function loadProducts(page = 1){
             `;
         }).join("");
 
-        buildPagination(data.count);
+        // Only build pagination if count exists
+        if(data.count){
+            buildPagination(data.count);
+        }
     })
     .catch(err=>{
-        console.error(err);
+        console.error("FETCH ERROR:", err);
         container.innerHTML = "<p style='color:red'>Failed to load products</p>";
     });
 }
