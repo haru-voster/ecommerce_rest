@@ -471,6 +471,22 @@ window.addEventListener("mousemove", e=>{
     startX = e.clientX;
     updateTransform();
 });
+document.getElementById("productContainer").addEventListener("click", function(e) {
+
+    if (e.target.classList.contains("cart-btn")) {
+
+        const productId = e.target.dataset.id;
+
+        addToCart(productId);
+    }
+});
+
+function addToCart(id) {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    cart.push(id);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert("Added product " + id);
+}
 </script>
 </body>
 </html>
