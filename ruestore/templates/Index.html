@@ -230,11 +230,13 @@ header{flex-direction:column;}
 <header>
 <div class="logo">RUESTORE</div>
 <div class="nav">
-<a href="#">Home</a>
-<a href="#">Products</a>
-<a href="#">Contact</a>
-<a href="#">Account</a>
-<button id="cartIcon">🛒 Cart (<span id="cart-count">0</span>)</button>
+  <a href="#">Home</a>
+  <a href="#">Products</a>
+  <a href="#">Contact</a>
+  <a href="#">Account</a>
+  <button id="cartIcon">
+    Cart (<span id="cart-count">0</span>)
+  </button>
 </div>
 </header>
 
@@ -252,70 +254,102 @@ header{flex-direction:column;}
 
 <script src="{% static 'js/cart.js' %}"></script>
 <!-- MODAL -->
+<!-- PRODUCT MODAL -->
 <div id="productModal" class="modal">
-<div class="modal-box">
+  <div class="modal-box">
 
-<span class="close" onclick="closeModal()">×</span>
+    <span class="close" onclick="closeModal()">×</span>
 
-<div class="modal-grid">
+    <div class="modal-grid">
 
-<div class="modal-img">
+      <!-- IMAGE SIDE -->
+      <div class="modal-img">
 
-<div class="viewer">
-<img id="modalImage">
-</div>
+        <div class="viewer">
+          <img id="modalImage">
+        </div>
 
-<div id="thumbnailContainer" class="thumbs"></div>
+        <div id="thumbnailContainer" class="thumbs"></div>
 
-<div class="viewer-controls">
-<button onclick="rotateLeft()">⟲</button>
-<button onclick="zoomIn()">＋</button>
-<button onclick="zoomOut()">－</button>
-<button onclick="rotateRight()">⟳</button>
-</div>
-<div id="cartModal" class="cart-modal">
-    <div class="cart-content">
-        <span id="closeCart" class="close">&times;</span>
-        <h2>Your Cart</h2>
-        <div id="cartItems"></div>
+        <div class="viewer-controls">
+          <button onclick="rotateLeft()">⟲</button>
+          <button onclick="zoomIn()">＋</button>
+          <button onclick="zoomOut()">－</button>
+          <button onclick="rotateRight()">⟳</button>
+        </div>
+
+      </div>
+
+      <!-- DETAILS SIDE -->
+      <div>
+        <h2 id="modalTitle"></h2>
+        <div class="modal-price" id="modalPrice"></div>
+        <ul id="modalSpecs"></ul>
+
+        <!-- IMPORTANT: remove django variable -->
+
+                <div id="productModal" style="display:none;">
+                <h2 id="modalTitle"></h2>
+                <img id="modalImage" src="" alt="Product Image">
+                <p id="modalPrice"></p>
+                <button id="modalAddToCart" class="cart-btn">Add To Cart</button>
+                <button onclick="closeModal()">Close</button>
+                </div>
+
+      </div>
+
     </div>
-</div>
+  </div>
 </div>
 
-<div>
-<h2 id="modalTitle"></h2>
-<div class="modal-price" id="modalPrice"></div>
-<ul id="modalSpecs"></ul>
-<button class="cart-btn"
-        data-id="{{ product.id }}"
-        data-name="{{ product.name }}"
-        data-price="{{ product.price }}">
-    Add To Cart
-</button>
+
 <style>
 .cart-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
 }
 
 .cart-content {
-    background: white;
-    width: 400px;
-    padding: 20px;
-    margin: 100px auto;
-    border-radius: 8px;
+  background: #fff;
+  width: 420px;
+  padding: 25px;
+  margin: 80px auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
-.close {
-    float: right;
-    cursor: pointer;
-    font-size: 20px;
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-price {
+  font-size: 20px;
+  font-weight: bold;
+  color: #e63946;
+  margin-bottom: 15px;
+}
+
+#modalAddToCart {
+  background: black;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+#modalAddToCart:hover {
+  background: #333;
 }
 </style>
 </div>

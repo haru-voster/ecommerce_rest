@@ -1,43 +1,96 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    const cartButtons = document.querySelectorAll(".cart-btn");
+    console.log("Cart JS Loaded ✅");
+
+    let currentProduct = null;
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
     const cartIcon = document.getElementById("cartIcon");
     const cartModal = document.getElementById("cartModal");
     const closeCart = document.getElementById("closeCart");
     const cartItemsContainer = document.getElementById("cartItems");
     const cartCount = document.getElementById("cart-count");
+    const addToCartBtn = document.getElementById("modalAddToCart");
+    const productModal = document.getElementById("productModal");
 
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    // ===============================
+    // UPDATE CART COUNT
+    // ===============================
+    function updateCartCount() {
+        if (cartCount) {
+            cartCount.innerText = cart.length;
+        }
+    }
 
     updateCartCount();
 
-    cartButtons.forEach(button => {
-        button.addEventListener("click", function () {
+    // ===============================
+    // OPEN PRODUCT MODAL
+    // ===============================
+    window.openModal = function (p) {
 
-            const product = {
-                id: this.dataset.id,
-                name: this.dataset.name,
-                price: this.dataset.price
-            };
+        console.log("Opening modal for:", p);
 
-            cart.push(product);
+        currentProduct = p;
+
+        document.getElementById("modalTitle").innerText = p.name;
+        document.getElementById("modalPrice").innerText = "Ksh " + p.price;
+        document.getElementById("modalImage").src = p.image;
+
+        productModal.style.display = "block";
+    };
+
+    // ===============================
+    // CLOSE PRODUCT MODAL
+    // ===============================
+    window.closeModal = function () {
+        productModal.style.display = "none";
+    };
+
+    // ===============================
+    // ADD TO CART
+    // ===============================
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener("click", function () {
+
+            if (!currentProduct) {
+                console.log("No product selected ❌");
+                return;
+            }
+
+            cart.push(currentProduct);
             localStorage.setItem("cart", JSON.stringify(cart));
 
             updateCartCount();
-            alert("Added to cart!");
+            alert("Added to cart ✅");
         });
-    });
+    }
 
-    cartIcon.addEventListener("click", function () {
-        renderCart();
-        cartModal.style.display = "block";
-    });
+    // ===============================
+    // OPEN CART MODAL
+    // ===============================
+    if (cartIcon) {
+        cartIcon.addEventListener("click", function (e) {
+            e.preventDefault();
+            renderCart();
+            cartModal.style.display = "block";
+        });
+    }
 
-    closeCart.addEventListener("click", function () {
-        cartModal.style.display = "none";
-    });
+    // ===============================
+    // CLOSE CART MODAL
+    // ===============================
+    if (closeCart) {
+        closeCart.addEventListener("click", function () {
+            cartModal.style.display = "none";
+        });
+    }
 
+    // ===============================
+    // RENDER CART ITEMS
+    // ===============================
     function renderCart() {
+
         cartItemsContainer.innerHTML = "";
 
         if (cart.length === 0) {
@@ -45,17 +98,40 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        cart.forEach(item => {
+        let total = 0;
+
+        cart.forEach((item, index) => {
+
+            total += parseFloat(item.price);
+
             cartItemsContainer.innerHTML += `
-                <div>
-                    <strong>${item.name}</strong> - Ksh ${item.price}
+                <div class="cart-item" style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small>Ksh ${item.price}</small>
+                    </div>
+                    <button onclick="removeItem(${index})" 
+                            style="background:red; color:white; border:none; padding:5px 8px; cursor:pointer;">
+                        X
+                    </button>
                 </div>
             `;
         });
+
+        cartItemsContainer.innerHTML += `
+            <hr>
+            <h3>Total: Ksh ${total}</h3>
+        `;
     }
 
-    function updateCartCount() {
-        cartCount.textContent = cart.length;
-    }
+    // ===============================
+    // REMOVE ITEM
+    // ===============================
+    window.removeItem = function (index) {
+        cart.splice(index, 1);
+        localStorage.setItem("cart", JSON.stringify(cart));
+        updateCartCount();
+        renderCart();
+    };
 
 });
