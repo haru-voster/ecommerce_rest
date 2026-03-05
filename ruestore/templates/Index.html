@@ -234,6 +234,7 @@ header{flex-direction:column;}
 <a href="#">Products</a>
 <a href="#">Contact</a>
 <a href="#">Account</a>
+<button id="cartIcon">🛒 Cart (<span id="cart-count">0</span>)</button>
 </div>
 </header>
 
@@ -249,7 +250,7 @@ header{flex-direction:column;}
 © <script>document.write(new Date().getFullYear())</script> RUESTORE
 </footer>
 
-
+<script src="{% static 'js/cart.js' %}"></script>
 <!-- MODAL -->
 <div id="productModal" class="modal">
 <div class="modal-box">
@@ -272,14 +273,51 @@ header{flex-direction:column;}
 <button onclick="zoomOut()">－</button>
 <button onclick="rotateRight()">⟳</button>
 </div>
-
+<div id="cartModal" class="cart-modal">
+    <div class="cart-content">
+        <span id="closeCart" class="close">&times;</span>
+        <h2>Your Cart</h2>
+        <div id="cartItems"></div>
+    </div>
+</div>
 </div>
 
 <div>
 <h2 id="modalTitle"></h2>
 <div class="modal-price" id="modalPrice"></div>
 <ul id="modalSpecs"></ul>
-<button class="cart-btn">Add To Cart</button>
+<button class="cart-btn"
+        data-id="{{ product.id }}"
+        data-name="{{ product.name }}"
+        data-price="{{ product.price }}">
+    Add To Cart
+</button>
+<style>
+.cart-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.cart-content {
+    background: white;
+    width: 400px;
+    padding: 20px;
+    margin: 100px auto;
+    border-radius: 8px;
+}
+
+.close {
+    float: right;
+    cursor: pointer;
+    font-size: 20px;
+}
+</style>
 </div>
 
 </div>
